@@ -1,10 +1,12 @@
+'''
+Created on Jul 22, 2020
+
+@author: zhuakexi
+'''
 import sys
 import getopt
-import copy
-import rmsd
 import numpy as np
-
-#input_data -> common_data
+import rmsd
 
 THRESHOLD=2
 def do_pick(pairs:list,dv:list):
@@ -123,7 +125,7 @@ def align(argv):
                     aligned_pos = np.dot((np.array(input_data[j][input_locus]) - centroid_data[j]) * mirror_factor, rotation_matrix) + centroid_data[i]
                     aligned_file.write("\t".join([input_locus[0], str(input_locus[1]), str(aligned_pos[0]), str(aligned_pos[1]), str(aligned_pos[2])]) + "\n")
                 aligned_file.close()
-    # ------------calculate rmsds------------
+    
 
     # ------------exclude structure deviation bigger than threthold------------
     problematic, good_pairs = do_pick(dv_pairs, median_deviations)
@@ -136,19 +138,26 @@ def align(argv):
         deviations = good_deviations   
     #print(dv_pairs)
     #print(median_deviations)
-    # ------------summarize rmsd and print------------
-    rmsds = np.sqrt((deviations ** 2).mean(axis = 1))
-    #print("rmsds", rmsds.shape)
-    totalrmsd = np.sqrt((rmsds ** 2).mean(axis = 0))
+
+    # ------------calculate rmsds------------
+    ## rms between cells
+    ## then rms and median between locus
+    RMS = lambda dv, i=0 : np.sqrt( (dv**2).mean(axis=i) )
+    Median = lambda dv, i=0 : np.median( dv, axis=i )
+    median_rmsd = Median( RMS(deviations,1) )
+    rms_rmsd = RMS( RMS(deviations,1) )
     
-    sys.stderr.write( "[M::" + __name__ + "] exclude: " + str(exclude_files) +"\n")
-    #RMS RMSD rmsds -> square -> median -> aqrt
-    sys.stderr.write("[M::" + __name__ + "] RMS RMSD: " + str(totalrmsd) + "\n")
-    # median RMSD rmsds -> median 
-    sys.stderr.write("[M::" + __name__ + "] median RMSD: " + str(np.median(rmsds,axis = 0)) + "\n")
+    # ------------print and log------------
+    sys.stderr.write("[M::" + __name__ + "] exclude: " + str(exclude_files) +"\n")
+    sys.stderr.write("[M::" + __name__ + "] RMS RMSD: " + str(rms_rmsd) + "\n")
+    sys.stderr.write("[M::" + __name__ + "] median RMSD: " + str(median_rmsd) + "\n")
     sys.stderr.write("[M::" + __name__ + "] writing output\n")
     
     for i in range(num_loci):
         sys.stdout.write("\t".join(map(str, [common_loci[i][0], common_loci[i][1], rmsds[i]])) + "\n")
-    return 0
+     
+
+if __name__ == '__main__':
+    #filenames = sys.argv[1:]
+    align(sys.argv)
     
