@@ -106,3 +106,7 @@ ENV/
 
 #vscode
 .vscode/
+#labdata
+raw/
+out/
+ref/
